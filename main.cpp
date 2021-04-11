@@ -37,7 +37,7 @@ using namespace __fs::filesystem;
 #define SELL_BIT_SIZE 8
 #define MODE "train"
 
-string FILE_DIR = "0410_sliding_window";
+string FILE_DIR = "0411_sliding_window_data";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
@@ -401,7 +401,7 @@ void startTrade(RSIParticle *p, int day_number, int particle_number){
 
 void recordGAnswer(RSIParticle *p, RSIParticle &gBest, RSIParticle &gWorst, RSIParticle &pBest, RSIParticle &pWorst) {
     pBest.copyP(p[0]);
-    pWorst.copyP(p[PARTICLENUMBER - 1]);
+    pWorst.copyP(p[0]);
     for (int j = 0; j < PARTICLENUMBER; j++) {
         if (pBest.return_rate < p[j].return_rate) {
             pBest.copyP(p[j]);
@@ -521,6 +521,14 @@ void recordCPUTime(double START, double END, string file_name){
     outfile_time.open(file_name, ios::out);
     outfile_time << "total time: " << total_time << " sec" << endl;
     outfile_time.close();
+}
+
+void recordData(RSIParticle &expBest, ofstream &outfile_data){
+    outfile_data << expBest.companyData.date_list[0] << " ~ ";
+    outfile_data << expBest.companyData.date_list[expBest.day_number - 1] << ",";
+    outfile_data << expBest.exp << "," << expBest.gen << ",";
+    outfile_data << expBest.RSI_number << "," << expBest.lower_bound << "," << expBest.upper_bound << ",";
+    outfile_data << expBest.trade_times << "," << expBest.return_rate << "," << endl;
 }
 
 void createDir(string file_dir, string company_name, string type){
@@ -812,14 +820,21 @@ int main(int argc, const char * argv[]) {
         string *data_copy = new string[day_number];
         copyData(data_copy, price_data, day_number);
         
-        for(int s = 4; s >= 0; s--){
+        for(int s = 3; s >= 0; s--){
             double START, END;
             START = clock();
+            
             Date current_date;
             Date finish_date;
             string TYPE;
             preSet(MODE, current_date, finish_date, s, TYPE);
             createDir(FILE_DIR, company_list[c], TYPE);
+            
+            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data.csv";
+            ofstream outfile_data;
+            outfile_data.open(temp, ios::out);
+            outfile_data << "Date,EXP,GEN,RSI number,Buy point,Sell point,Trade times,Return rate," << endl;
+            
             do{
                 
                 int range_day_number;
@@ -839,12 +854,12 @@ int main(int argc, const char * argv[]) {
                 
                 double *beta_ = new double[BIT_SIZE];
                 RSIParticle* rsi_particle_list = new RSIParticle[PARTICLENUMBER];
-                RSIParticle gBest(range_day_number, BIT_SIZE, FUNDS, companyData);
-                RSIParticle gWorst(range_day_number, BIT_SIZE, FUNDS, companyData);
                 RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
                 for(int n = 0; n < EXPNUMBER; n++){
                     cout << "___" << company_list[c] << " : " << n << "___" << endl;
-                    gBest.return_rate = 0;
+                    RSIParticle gBest(range_day_number, BIT_SIZE, FUNDS, companyData);
+                    RSIParticle gWorst(range_day_number, BIT_SIZE, FUNDS, companyData);
+                    gBest.return_rate = -10000;
                     gWorst.return_rate = DBL_MAX;
                     initial(beta_, BIT_SIZE);
                     for(int i = 0; i < ITERNUMBER; i++){
@@ -861,6 +876,7 @@ int main(int argc, const char * argv[]) {
                 expBest.print();
                 genTradeRecord(expBest, range_day_number);
                 outputFile(expBest, getOutputFilePath(company_list[c], current_date, MODE, FILE_DIR, TYPE));
+                recordData(expBest, outfile_data);
                 
                 delete[] rsi_particle_list;
                 delete[] beta_;
@@ -869,9 +885,8 @@ int main(int argc, const char * argv[]) {
             END = clock();
             temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "time.txt";
             recordCPUTime(START, END, temp);
+            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data.csv";
         }
-        price_data_vector.clear();
-        RSI_data_vector.clear();
         delete[] price_data;
         delete[] RSI_data;
         delete[] data_copy;
