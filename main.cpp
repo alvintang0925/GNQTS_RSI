@@ -21,7 +21,7 @@
 #include "date.h"
 
 using namespace std;
-using namespace __fs::filesystem;
+using namespace filesystem;
 
 #define EXPNUMBER 50
 #define ITERNUMBER 10000
@@ -35,9 +35,9 @@ using namespace __fs::filesystem;
 #define RSI_BIT_SIZE 8
 #define BUY_BIT_SIZE 8
 #define SELL_BIT_SIZE 8
-#define MODE "train"
+#define MODE "exhaustive" //train, exhaustive
 
-string FILE_DIR = "0411_sliding_window_data";
+string FILE_DIR = "0412_sliding_window_data";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
@@ -49,11 +49,21 @@ public:
     double *price_list = NULL;
     double **RSI_list = NULL;
     int day_number;
-    void init(int day);
+    void init(int);
+    void init(CompanyData&);
     void print();
+    
+    ~CompanyData();
 };
 
-
+CompanyData::~CompanyData(){
+    delete[] this -> date_list;
+    delete[] this -> price_list;
+    for(int j = 0; j < RSI_RANGE; j++){
+        delete[] this -> RSI_list[j];
+    }
+    delete[] this -> RSI_list;
+}
 
 void CompanyData::init(int day_number){
     this -> day_number = day_number;
@@ -62,6 +72,21 @@ void CompanyData::init(int day_number){
     this -> RSI_list = new double*[RSI_RANGE];
     for(int j = 0; j < RSI_RANGE; j++){
         RSI_list[j] = new double[day_number];
+    }
+}
+
+void CompanyData::init(CompanyData &c){
+    this -> init(c.day_number);
+    this -> day_number = c.day_number;
+    for(int j = 0; j < this -> day_number; j++){
+        this -> date_list[j] = c.date_list[j];
+        this -> price_list[j] = c.price_list[j];
+    }
+    
+    for(int j = 0; j < RSI_RANGE; j++){
+        for(int k = 0; k < this -> day_number; k++){
+            this -> RSI_list[j][k] = c.RSI_list[j][k];
+        }
     }
 }
 
@@ -74,21 +99,22 @@ void CompanyData::print(){
 
 class RSIParticle{
 public:
-    int gen;
-    int exp;
+    int gen = 0;
+    int exp = 0;
     int answer_counter = 0;
-    int day_number;
+    int day_number = 0;
     int trade_times = 0;
-    int RSI_number;
+    int RSI_number = 0;
     int investment_number = 0;
+    int bit_size = 0;
     int* investment_list = NULL;
     int* data = NULL;
     int* trade_list = NULL;
     int* trade_record = NULL;
-    double funds;
+    double funds = 0;
     double return_rate = 0;
-    double upper_bound;
-    double lower_bound;
+    double upper_bound = 0;
+    double lower_bound = 0;
     double remain_money = 0;
     double* remain_money_list = NULL;
     double* total_money = NULL;
@@ -99,8 +125,9 @@ public:
     
     RSIParticle();
     ~RSIParticle();
-    RSIParticle(int, int, double, CompanyData);
-    void init(int, int, double, CompanyData);
+    RSIParticle(int, int, double, CompanyData&);
+    void init();
+    void init(int, int, double, CompanyData&);
     void bitToDec();
     void print();
     void copyP(RSIParticle&);
@@ -113,41 +140,84 @@ RSIParticle::RSIParticle(){
     
 }
 
-RSIParticle::RSIParticle(int day_number, int bit_size, double funds, CompanyData companyData){
-    this -> return_rate = 0;
-    this -> trade_times = 0;
-    this -> investment_number = 0;
-    this -> remain_money = 0;
+RSIParticle::RSIParticle(int day_number, int bit_size, double funds, CompanyData &companyData){
+    
     this -> day_number = day_number;
     this -> funds = funds;
     this -> remain_money = funds;
+    this -> bit_size = bit_size;
+    if(this -> data != NULL){
+        delete[] this -> data;
+        delete[] this -> trade_list;
+        delete[] this -> investment_list;
+        delete[] this -> total_money;
+        delete[] this -> remain_money_list;
+    }
     this -> data = new int[bit_size];
     this -> trade_list = new int[day_number];
     this -> investment_list = new int[day_number];
     this -> total_money = new double[day_number];
     this -> remain_money_list = new double[day_number];
-    this -> companyData = companyData;
+    this -> companyData.init(companyData);
 }
 
 RSIParticle::~RSIParticle(){
-    delete[] this -> data;
-    delete[] this -> trade_list;
-    delete[] this -> investment_list;
-    delete[] this -> total_money;
-    delete[] this -> remain_money_list;
+    if(this -> data != NULL){
+        delete[] this -> data;
+        delete[] this -> trade_list;
+        delete[] this -> investment_list;
+        delete[] this -> total_money;
+        delete[] this -> remain_money_list;
+    }
+    this -> data = NULL;
+    this -> trade_list = NULL;
+    this -> investment_list = NULL;
+    this -> total_money = NULL;
+    this -> remain_money_list = NULL;
+    
 }
 
-void RSIParticle::init(int day_number, int bit_size, double funds, CompanyData companyData){
-    this -> return_rate = 0;
-    this -> trade_times = 0;
-    this -> investment_number = 0;
+void RSIParticle::init(){
+    this -> gen = 0;;
+    this -> exp = 0;;
     this -> answer_counter = 0;
-    this -> investment_number = 0;
-    this -> remain_money = funds;
     this -> trade_times = 0;
+    this -> RSI_number = 0;
+    this -> investment_number = 0;
+    this -> return_rate = 0;
+    this -> upper_bound = 0;
+    this -> lower_bound = 0;
+    this -> remain_money =  this -> funds;
+    if(this -> data != NULL){
+        delete[] this -> data;
+        delete[] this -> trade_list;
+        delete[] this -> investment_list;
+        delete[] this -> total_money;
+        delete[] this -> remain_money_list;
+    }
+    this -> data = new int[this -> bit_size];
+    this -> trade_list = new int[this -> day_number];
+    this -> investment_list = new int[this -> day_number];
+    this -> total_money = new double[this -> day_number];
+    this -> remain_money_list = new double[this -> day_number];
+    
+}
+
+void RSIParticle::init(int day_number, int bit_size, double funds, CompanyData &companyData){
+    this -> gen = 0;;
+    this -> exp = 0;;
+    this -> answer_counter = 0;
+    this -> trade_times = 0;
+    this -> RSI_number = 0;
+    this -> investment_number = 0;
+    this -> return_rate = 0;
+    this -> upper_bound = 0;
+    this -> lower_bound = 0;
+    this -> remain_money = funds;
     this -> day_number = day_number;
     this -> funds = funds;
-    this -> companyData = companyData;
+    this -> companyData.init(companyData);
+    this -> bit_size = bit_size;
     
     if(this -> data != NULL){
         delete[] this -> data;
@@ -345,9 +415,15 @@ void initial(double *b, int size) {
     }
 }
 
-void initRSIParticle(RSIParticle *p, int day_number, CompanyData companyData){
-    for(int j = 0; j < PARTICLENUMBER; j++){
+void initRSIParticle(RSIParticle *p, int particle_number, int day_number, CompanyData &companyData){
+    for(int j = 0; j < particle_number; j++){
         p[j].init(day_number, BIT_SIZE, FUNDS, companyData);
+    }
+}
+
+void initRISParticle(RSIParticle *p){
+    for(int j = 0; j < PARTICLENUMBER; j++){
+        p[j].init();
     }
 }
 
@@ -537,6 +613,7 @@ void createDir(string file_dir, string company_name, string type){
     create_directory(file_dir + "/" + company_name + "/" + type);
     create_directory(file_dir + "/" + company_name + "/" + type + "/" + "train");
     create_directory(file_dir + "/" + company_name + "/" + type + "/" + "test");
+    create_directory(file_dir + "/" + company_name + "/" + type + "/" + "exhaustive");
 }
 
 void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, string& TYPE) {
@@ -793,12 +870,109 @@ void copyData(string *data_copy, string **data, int day_number){
     }
 }
 
+void releaseData(vector<vector<string>> &price_data_vector, vector<vector<vector<string>>> &RSI_data_vector, string **price_data, string ***RSI_data, string *data_copy){
+    for(int j = 0; j < price_data_vector.size(); j++){
+        delete[] price_data[j];
+        price_data_vector[j].clear();
+    }
+    delete[] price_data;
+    price_data_vector.clear();
+    
+    for(int j = 0; j < RSI_data_vector.size(); j++){
+        for(int k = 0; k < RSI_data_vector[j].size(); k++){
+            delete[] RSI_data[j][k];
+            RSI_data_vector[j][k].clear();
+        }
+        delete[] RSI_data[j];
+        RSI_data_vector[j].clear();
+    }
+
+    delete[] RSI_data;
+    RSI_data_vector.clear();
+    delete[] data_copy;
+}
+
 string getOutputFilePath(string company_name, Date current_date, string mode, string file_dir, string type){
     return file_dir + "/" + company_name + "/" + type + "/" + mode + "/" + mode + "_" + current_date.getYear() + "_" + current_date.getMon() + ".csv";
 }
 
+void startTrain(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
+    
+    double *beta_ = new double[BIT_SIZE];
+    
+    RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
+    RSIParticle gBest(range_day_number, BIT_SIZE, FUNDS, companyData);
+    RSIParticle gWorst(range_day_number, BIT_SIZE, FUNDS, companyData);
+    RSIParticle pBest(range_day_number, BIT_SIZE, FUNDS, companyData);
+    RSIParticle pWorst(range_day_number, BIT_SIZE, FUNDS, companyData);
+    RSIParticle* rsi_particle_list = new RSIParticle[PARTICLENUMBER];
+    initRSIParticle(rsi_particle_list, PARTICLENUMBER, range_day_number, companyData);
+    for(int n = 0; n < EXPNUMBER; n++){
+        
+        cout << "___" << company_name << " : " << n << "___" << endl;
+        gBest.init();
+        gWorst.init();
+        gBest.return_rate = -10000;
+        gWorst.return_rate = DBL_MAX;
+        initial(beta_, BIT_SIZE);
+        for(int i = 0; i < ITERNUMBER; i++){
+            pBest.init();
+            pWorst.init();
+            initRISParticle(rsi_particle_list);
+            genParticle(rsi_particle_list, n, i, beta_);
+            startTrade(rsi_particle_list, range_day_number, PARTICLENUMBER);
+            recordGAnswer(rsi_particle_list, gBest, gWorst, pBest, pWorst);
+            adjBeta(gBest, pWorst, beta_);
+        }
+        recordExpAnswer(expBest, gBest);
+        
+    }
+    delete[] rsi_particle_list;
+    expBest.print();
+    delete[] beta_;
+    result.copyP(expBest);
+}
+
+void startExhaustive(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
+    
+    RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
+    expBest.return_rate = -10000;
+    RSIParticle* rsi_particle_list = new RSIParticle[1];
+    initRSIParticle(rsi_particle_list, 1, range_day_number, companyData);
+    for(int j = 0; j < BIT_SIZE; j++){
+        rsi_particle_list[0].data[j] = 0;
+    }
+    int EXHAUSTIVENUMBER = pow(2, BIT_SIZE);
+    for(int n = 0; n < EXHAUSTIVENUMBER; n++){
+        if(n % 100000 == 0){
+            cout << "___" << company_name << " : " << n << "___" << endl;
+        }
+        rsi_particle_list[0].init();
+       
+        bool add = true;
+        for(int j = 0; j < BIT_SIZE; j++){
+            if (n == 0){
+                break;
+            }
+            if(rsi_particle_list[0].data[j] == 0 && add){
+                add = false;
+                rsi_particle_list[0].data[j] = 1;
+                break;
+            }else if(rsi_particle_list[0].data[j] == 1 && add){
+                rsi_particle_list[0].data[j] = 0;
+            }
+        }
+        rsi_particle_list[0].bitToDec();
+        startTrade(rsi_particle_list, range_day_number, 1);
+        recordExpAnswer(expBest, rsi_particle_list[0]);
+    }
+    delete[]   rsi_particle_list;
+    expBest.print();
+    result.copyP(expBest);
+}
+
 int main(int argc, const char * argv[]) {
-    srand(343);
+    
     
     vector<string> company_list = genCompanyList(COMPANY_PRICE_DIR);
     for(int c = 0; c < company_list.size(); c++){
@@ -820,7 +994,9 @@ int main(int argc, const char * argv[]) {
         string *data_copy = new string[day_number];
         copyData(data_copy, price_data, day_number);
         
-        for(int s = 3; s >= 0; s--){
+        for(int s = 4; s >= 0; s--){
+            
+            srand(343);
             double START, END;
             START = clock();
             
@@ -830,13 +1006,12 @@ int main(int argc, const char * argv[]) {
             preSet(MODE, current_date, finish_date, s, TYPE);
             createDir(FILE_DIR, company_list[c], TYPE);
             
-            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data.csv";
+            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + ".csv";
             ofstream outfile_data;
             outfile_data.open(temp, ios::out);
             outfile_data << "Date,EXP,GEN,RSI number,Buy point,Sell point,Trade times,Return rate," << endl;
             
             do{
-                
                 int range_day_number;
                 string start_date;
                 string end_date;
@@ -844,52 +1019,31 @@ int main(int argc, const char * argv[]) {
                 int end_index;
                 
                 setWindow(MODE, start_date, end_date, start_index, end_index, current_date, finish_date, data_copy, price_data, day_number, range_day_number);
-                
-                cout << "______" << TYPE << " : " << start_date << " - " << end_date << "______" << endl;
-                
                 CompanyData companyData;
                 companyData.init(range_day_number);
                 createCompanyData(companyData, price_data, RSI_data, start_index, end_index);
                 range_day_number = companyData.day_number;
                 
-                double *beta_ = new double[BIT_SIZE];
-                RSIParticle* rsi_particle_list = new RSIParticle[PARTICLENUMBER];
-                RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
-                for(int n = 0; n < EXPNUMBER; n++){
-                    cout << "___" << company_list[c] << " : " << n << "___" << endl;
-                    RSIParticle gBest(range_day_number, BIT_SIZE, FUNDS, companyData);
-                    RSIParticle gWorst(range_day_number, BIT_SIZE, FUNDS, companyData);
-                    gBest.return_rate = -10000;
-                    gWorst.return_rate = DBL_MAX;
-                    initial(beta_, BIT_SIZE);
-                    for(int i = 0; i < ITERNUMBER; i++){
-                        RSIParticle pBest(range_day_number, BIT_SIZE, FUNDS, companyData);
-                        RSIParticle pWorst(range_day_number, BIT_SIZE, FUNDS, companyData);
-                        initRSIParticle(rsi_particle_list, range_day_number, companyData);
-                        genParticle(rsi_particle_list, n, i, beta_);
-                        startTrade(rsi_particle_list, range_day_number, PARTICLENUMBER);
-                        recordGAnswer(rsi_particle_list, gBest, gWorst, pBest, pWorst);
-                        adjBeta(gBest, pWorst, beta_);
-                    }
-                    recordExpAnswer(expBest, gBest);
-                }
-                expBest.print();
-                genTradeRecord(expBest, range_day_number);
-                outputFile(expBest, getOutputFilePath(company_list[c], current_date, MODE, FILE_DIR, TYPE));
-                recordData(expBest, outfile_data);
+                cout << "______" << TYPE << " : " << start_date << " - " << end_date << "______" << endl;
+                RSIParticle result(range_day_number, BIT_SIZE, FUNDS, companyData);
                 
-                delete[] rsi_particle_list;
-                delete[] beta_;
+                if(MODE == "train"){
+                    startTrain(result, company_list[c], companyData, range_day_number);
+                }else if(MODE == "exhaustive"){
+                    startExhaustive(result, company_list[c], companyData, range_day_number);
+                }
+                
+                genTradeRecord(result, range_day_number);
+                outputFile(result, getOutputFilePath(company_list[c], current_date, MODE, FILE_DIR, TYPE));
+                recordData(result, outfile_data);
                 current_date.slide();
             }while(finish_date >= current_date);
             END = clock();
-            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "time.txt";
+            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "time_" + MODE + ".txt";
             recordCPUTime(START, END, temp);
-            temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data.csv";
+            outfile_data.close();
         }
-        delete[] price_data;
-        delete[] RSI_data;
-        delete[] data_copy;
+        releaseData(price_data_vector, RSI_data_vector, price_data, RSI_data, data_copy);
     }
     return 0;
 }
