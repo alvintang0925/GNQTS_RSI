@@ -555,35 +555,37 @@ void recordGAnswer(RSIParticle *p, RSIParticle &gBest, RSIParticle &gWorst, RSIP
 }
 
 void adjBeta(RSIParticle& best, RSIParticle& worst, double *beta_) {
-    for (int j = 0; j < BIT_SIZE; j++) {
-        if (QTSTYPE == 2) {
-            if (best.data[j] > worst.data[j]) {
-                if (beta_[j] < 0.5) {
-                    beta_[j] = 1 - beta_[j];
+    if(best.return_rate != 0){
+        for (int j = 0; j < BIT_SIZE; j++) {
+            if (QTSTYPE == 2) {
+                if (best.data[j] > worst.data[j]) {
+                    if (beta_[j] < 0.5) {
+                        beta_[j] = 1 - beta_[j];
+                    }
+                    beta_[j] += DELTA;
                 }
-                beta_[j] += DELTA;
-            }
-            else if (best.data[j] < worst.data[j]) {
-                if (beta_[j] > 0.5) {
-                    beta_[j] = 1 - beta_[j];
+                else if (best.data[j] < worst.data[j]) {
+                    if (beta_[j] > 0.5) {
+                        beta_[j] = 1 - beta_[j];
+                    }
+                    beta_[j] -= DELTA;
                 }
-                beta_[j] -= DELTA;
             }
-        }
-        else if (QTSTYPE == 1) {
-            if (best.data[j] > worst.data[j]) {
-                beta_[j] += DELTA;
+            else if (QTSTYPE == 1) {
+                if (best.data[j] > worst.data[j]) {
+                    beta_[j] += DELTA;
+                }
+                else if (best.data[j] < worst.data[j]) {
+                    beta_[j] -= DELTA;
+                }
             }
-            else if (best.data[j] < worst.data[j]) {
-                beta_[j] -= DELTA;
-            }
-        }
-        else {
-            if (best.data[j] > worst.data[j]) {
-                beta_[j] += DELTA;
-            }
-            else if (best.data[j] < worst.data[j]) {
-                beta_[j] -= DELTA;
+            else {
+                if (best.data[j] > worst.data[j]) {
+                    beta_[j] += DELTA;
+                }
+                else if (best.data[j] < worst.data[j]) {
+                    beta_[j] -= DELTA;
+                }
             }
         }
     }
@@ -600,12 +602,14 @@ void recordExpAnswer(RSIParticle& expBest, RSIParticle& gBest) {
 }
 
 void genTradeRecord(RSIParticle& expBest, int day_number){
-    int counter = 0;
-    expBest.trade_record = new int[expBest.trade_times * 2];
-    for(int j = 0; j < day_number; j++){
-        if(expBest.trade_list[j] == 1){
-            expBest.trade_record[counter] = j;
-            counter++;
+    if(expBest.trade_times != 0){
+        int counter = 0;
+        expBest.trade_record = new int[expBest.trade_times * 2];
+        for(int j = 0; j < day_number; j++){
+            if(expBest.trade_list[j] == 1){
+                expBest.trade_record[counter] = j;
+                counter++;
+            }
         }
     }
 }
@@ -622,8 +626,8 @@ void outputFile(RSIParticle &p, string file_name) {
     outfile << endl;
     
     outfile << "Init funds," << p.funds << endl;
-    outfile << "Final funds," << p.total_money[p.day_number - 1] << endl;
-    outfile << "Real award," << p.total_money[p.day_number - 1] - p.funds << endl;
+    outfile << "Final funds," << p.remain_money << endl;
+    outfile << "Real award," << p.remain_money - p.funds << endl;
     outfile << endl;
     
     outfile << "RSI number," << p.RSI_number << endl;
@@ -639,10 +643,13 @@ void outputFile(RSIParticle &p, string file_name) {
     outfile << endl;
     
     outfile << "Trade record,Date,Price,RSI,Stock number,Remain money,Total money," << endl;
-    for(int j = 0; j < p.trade_times * 2; j += 2){
-        outfile << "Buy," << p.companyData.date_list[p.trade_record[j]] << "," << p.companyData.price_list[p.trade_record[j]] << "," << p.companyData.RSI_list[p.RSI_number - 1][p.trade_record[j]] << "," << p.investment_list[p.trade_record[j]] << "," << p.remain_money_list[p.trade_record[j]] << "," << p.total_money[p.trade_record[j]] << "," << endl;
-        outfile << "Sell," << p.companyData.date_list[p.trade_record[j+1]] << "," << p.companyData.price_list[p.trade_record[j+1]] << "," << p.companyData.RSI_list[p.RSI_number - 1][p.trade_record[j+1]] << "," << p.investment_list[p.trade_record[j+1]] << "," << p.remain_money_list[p.trade_record[j+1]] << "," << p.total_money[p.trade_record[j+1]] << "," << endl;
-        outfile << endl;
+    
+    if(p.trade_times != 0){
+        for(int j = 0; j < p.trade_times * 2; j += 2){
+            outfile << "Buy," << p.companyData.date_list[p.trade_record[j]] << "," << p.companyData.price_list[p.trade_record[j]] << "," << p.companyData.RSI_list[p.RSI_number - 1][p.trade_record[j]] << "," << p.investment_list[p.trade_record[j]] << "," << p.remain_money_list[p.trade_record[j]] << "," << p.total_money[p.trade_record[j]] << "," << endl;
+            outfile << "Sell," << p.companyData.date_list[p.trade_record[j+1]] << "," << p.companyData.price_list[p.trade_record[j+1]] << "," << p.companyData.RSI_list[p.RSI_number - 1][p.trade_record[j+1]] << "," << p.investment_list[p.trade_record[j+1]] << "," << p.remain_money_list[p.trade_record[j+1]] << "," << p.total_money[p.trade_record[j+1]] << "," << endl;
+            outfile << endl;
+        }
     }
     outfile.close();
 }
@@ -978,7 +985,6 @@ void startTrain(RSIParticle &result, string company_name, CompanyData &companyDa
         cout << "___" << company_name << " : " << n << "___" << endl;
         gBest.init();
         gWorst.init();
-        gBest.return_rate = -10000;
         gWorst.return_rate = DBL_MAX;
         initial(beta_, BIT_SIZE);
         for(int i = 0; i < ITERNUMBER; i++){
@@ -1003,7 +1009,6 @@ void startTrain(RSIParticle &result, string company_name, CompanyData &companyDa
 void startExhaustive(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
     
     RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
-    expBest.return_rate = -10000;
     RSIParticle* rsi_particle_list = new RSIParticle[1];
     initRSIParticle(rsi_particle_list, 1, range_day_number, companyData);
     int* temp_data = new int[BIT_SIZE];
