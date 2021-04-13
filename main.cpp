@@ -35,12 +35,16 @@ using namespace filesystem;
 #define RSI_BIT_SIZE 8
 #define BUY_BIT_SIZE 8
 #define SELL_BIT_SIZE 8
-#define MODE "exhaustive" //train, exhaustive
+#define MODE "specify" //train, exhaustive, B&H, specify
+
 
 string FILE_DIR = "0412_sliding_window_data_temp";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
+int RSI_PARAMETER[24] = {0, 0, 0, 0, 0, 1, 0, 0,
+                         0, 0, 0, 1, 0, 1, 0, 0,
+                         0, 1, 0, 1, 0, 0, 0, 0};
 
 
 class CompanyData{
@@ -475,6 +479,30 @@ void startTrade(RSIParticle *p, int day_number, int particle_number){
     }
 }
 
+void startTradeBH(RSIParticle &p, int day_number){
+    
+    for(int k = 0; k < day_number; k++){
+        if(k == 0){
+            p.investment_number = p.remain_money / p.companyData.price_list[k];
+            p.remain_money -= p.investment_number * p.companyData.price_list[k];
+            p.trade_list[k] = 1;
+            p.trade_times += 1;
+        }else if(k == day_number - 1){
+            p.remain_money += p.investment_number * p.companyData.price_list[k];
+            p.investment_number = 0;
+            p.trade_list[k] = 1;
+        }else{
+            p.trade_list[k] = 0;
+        }
+        
+        p.remain_money_list[k] = p.remain_money;
+        p.investment_list[k] = p.investment_number;
+        p.total_money[k] = p.investment_number * p.companyData.price_list[k] + p.remain_money;
+    }
+    p.return_rate = (p.remain_money - p.funds) / p.funds * 100;
+}
+
+
 void recordGAnswer(RSIParticle *p, RSIParticle &gBest, RSIParticle &gWorst, RSIParticle &pBest, RSIParticle &pWorst) {
     pBest.copyP(p[0]);
     pWorst.copyP(p[0]);
@@ -542,7 +570,6 @@ void recordExpAnswer(RSIParticle& expBest, RSIParticle& gBest) {
 }
 
 void genTradeRecord(RSIParticle& expBest, int day_number){
-    bool flag = true;
     int counter = 0;
     expBest.trade_record = new int[expBest.trade_times * 2];
     for(int j = 0; j < day_number; j++){
@@ -607,13 +634,11 @@ void recordData(RSIParticle &expBest, ofstream &outfile_data){
     outfile_data << expBest.trade_times << "," << expBest.return_rate << "," << endl;
 }
 
-void createDir(string file_dir, string company_name, string type){
+void createDir(string file_dir, string company_name, string type, string mode){
     create_directory(file_dir);
     create_directory(file_dir + "/" + company_name);
     create_directory(file_dir + "/" + company_name + "/" + type);
-    create_directory(file_dir + "/" + company_name + "/" + type + "/" + "train");
-    create_directory(file_dir + "/" + company_name + "/" + type + "/" + "test");
-    create_directory(file_dir + "/" + company_name + "/" + type + "/" + "exhaustive");
+    create_directory(file_dir + "/" + company_name + "/" + type + "/" + mode);
 }
 
 void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, string& TYPE) {
@@ -974,9 +999,34 @@ void startExhaustive(RSIParticle &result, string company_name, CompanyData &comp
     result.copyP(expBest);
 }
 
+void startBH(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
+    RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
+    expBest.init();
+    for(int j = 0; j < BIT_SIZE; j++){
+        expBest.data[j] = 0;
+    }
+    
+    expBest.bitToDec();
+    startTradeBH(expBest, range_day_number);
+    expBest.print();
+    result.copyP(expBest);
+}
+
+void startSpe(RSIParticle &result, int* RSI_parameter, string company_name, CompanyData &companyData, int range_day_number){
+    RSIParticle* rsi_particle_list = new RSIParticle[1];
+    initRSIParticle(rsi_particle_list, 1, range_day_number, companyData);
+    rsi_particle_list[0].init();
+    for(int j = 0; j < BIT_SIZE; j++){
+        rsi_particle_list[0].data[j] = RSI_parameter[j];
+    }
+    
+    rsi_particle_list[0].bitToDec();
+    startTrade(rsi_particle_list, range_day_number, 1);
+    rsi_particle_list[0].print();
+    result.copyP(rsi_particle_list[0]);
+}
+
 int main(int argc, const char * argv[]) {
-    
-    
     vector<string> company_list = genCompanyList(COMPANY_PRICE_DIR);
     for(int c = 0; c < company_list.size(); c++){
         int day_number;
@@ -1007,7 +1057,7 @@ int main(int argc, const char * argv[]) {
             Date finish_date;
             string TYPE;
             preSet(MODE, current_date, finish_date, s, TYPE);
-            createDir(FILE_DIR, company_list[c], TYPE);
+            createDir(FILE_DIR, company_list[c], TYPE, MODE);
             
             temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + ".csv";
             ofstream outfile_data;
@@ -1034,6 +1084,10 @@ int main(int argc, const char * argv[]) {
                     startTrain(result, company_list[c], companyData, range_day_number);
                 }else if(MODE == "exhaustive"){
                     startExhaustive(result, company_list[c], companyData, range_day_number);
+                }else if(MODE == "B&H"){
+                    startBH(result, company_list[c], companyData, range_day_number);
+                }else if(MODE == "specify"){
+                    startSpe(result, RSI_PARAMETER, company_list[c], companyData, range_day_number);
                 }
                 
                 genTradeRecord(result, range_day_number);
