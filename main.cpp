@@ -37,7 +37,7 @@ using namespace filesystem;
 #define SELL_BIT_SIZE 8
 #define MODE "exhaustive" //train, exhaustive
 
-string FILE_DIR = "0412_sliding_window_data";
+string FILE_DIR = "0412_sliding_window_data_temp";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
@@ -350,7 +350,7 @@ vector<string> genCompanyList(string fileDir){
     {
         path px = it->path();
         if(px.extension() == ".csv"){
-            temp.push_back(px.stem());
+            temp.push_back(px.stem().generic_string());
         }
     }
     sort(temp.begin(), temp.end());
@@ -627,8 +627,8 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
         case 0:
             STARTYEAR = "2010";
             STARTMONTH = "1";
-            ENDYEAR = "2021";
-            ENDMONTH = "1";
+            ENDYEAR = "2020";
+            ENDMONTH = "12";
             TYPE = "M2M";
             train_range = 1;
             slide_number = 1;
@@ -667,11 +667,11 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
         case 4:
         STARTYEAR = "2010";
         STARTMONTH = "1";
-        ENDYEAR = "2021";
-        ENDMONTH = "1";
+        ENDYEAR = "2020";
+        ENDMONTH = "12";
         TYPE = "A2A";
-        train_range = 133;
-        slide_number = 133;
+        train_range = 132;
+        slide_number = 132;
         break;
         
     }
