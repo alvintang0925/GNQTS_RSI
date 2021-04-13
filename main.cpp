@@ -35,14 +35,14 @@ using namespace filesystem;
 #define RSI_BIT_SIZE 8
 #define BUY_BIT_SIZE 7
 #define SELL_BIT_SIZE 7
-#define MODE "specify" //train, exhaustive, B&H, specify
+#define MODE "exhaustive" //train, exhaustive, B&H, specify
 
 
 string FILE_DIR = "0413_20100104~20201231_0.004_bit22";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
-int RSI_PARAMETER[3] = {5, 20, 80};
+int RSI_PARAMETER[3] = {14, 30, 70};
 
 
 class CompanyData{
@@ -955,7 +955,11 @@ void releaseData(vector<vector<string>> &price_data_vector, vector<vector<vector
 }
 
 string getOutputFilePath(string company_name, Date current_date, string mode, string file_dir, string type){
-    return file_dir + "/" + company_name + "/" + type + "/" + mode + "_(" + to_string(RSI_PARAMETER[0]) + ", " + to_string(RSI_PARAMETER[1]) + ", " + to_string(RSI_PARAMETER[2]) + ")/" + mode + "_" + current_date.getYear() + "_" + current_date.getMon() + ".csv";
+    if(mode == "specify"){
+        return file_dir + "/" + company_name + "/" + type + "/" + mode + "_(" + to_string(RSI_PARAMETER[0]) + ", " + to_string(RSI_PARAMETER[1]) + ", " + to_string(RSI_PARAMETER[2]) + ")/" + mode + "_" + current_date.getYear() + "_" + current_date.getMon() + ".csv";
+    }else{
+        return file_dir + "/" + company_name + "/" + type + "/" + mode + "/" + mode + "_" + current_date.getYear() + "_" + current_date.getMon() + ".csv";
+    }
 }
 
 void startTrain(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
@@ -989,8 +993,9 @@ void startTrain(RSIParticle &result, string company_name, CompanyData &companyDa
         recordExpAnswer(expBest, gBest);
         
     }
-    delete[] rsi_particle_list;
+    
     expBest.print();
+    delete[] rsi_particle_list;
     delete[] beta_;
     result.copyP(expBest);
 }
@@ -1013,13 +1018,14 @@ void startExhaustive(RSIParticle &result, string company_name, CompanyData &comp
         for(int j = 0; j < BIT_SIZE; j++){
             if (n == 0){
                 temp_data[j] = 0;
-            }
-            if(temp_data[j] == 0 && add){
-                add = false;
-                temp_data[j] = 1;
-                break;
-            }else if(temp_data[j] == 1 && add){
-                temp_data[j] = 0;
+            }else{
+                if(temp_data[j] == 0 && add){
+                    add = false;
+                    temp_data[j] = 1;
+                    break;
+                }else if(temp_data[j] == 1 && add){
+                    temp_data[j] = 0;
+                }
             }
         }
         
@@ -1032,6 +1038,7 @@ void startExhaustive(RSIParticle &result, string company_name, CompanyData &comp
         recordExpAnswer(expBest, rsi_particle_list[0]);
     }
     delete[] rsi_particle_list;
+    delete[] temp_data;
     expBest.print();
     result.copyP(expBest);
 }
