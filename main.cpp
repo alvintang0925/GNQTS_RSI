@@ -33,18 +33,16 @@ using namespace filesystem;
 #define STARTDATE "2010-01-04"
 #define RSI_RANGE 256
 #define RSI_BIT_SIZE 8
-#define BUY_BIT_SIZE 8
-#define SELL_BIT_SIZE 8
+#define BUY_BIT_SIZE 7
+#define SELL_BIT_SIZE 7
 #define MODE "specify" //train, exhaustive, B&H, specify
 
 
-string FILE_DIR = "0412_sliding_window_data_temp";
+string FILE_DIR = "0413_20100104~20201231_0.004_bit22";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
-int RSI_PARAMETER[24] = {0, 0, 0, 0, 0, 1, 0, 0,
-                         0, 0, 0, 1, 0, 1, 0, 0,
-                         0, 1, 0, 1, 0, 0, 0, 0};
+int RSI_PARAMETER[3] = {5, 20, 80};
 
 
 class CompanyData{
@@ -133,6 +131,7 @@ public:
     void init();
     void init(int, int, double, CompanyData&);
     void bitToDec();
+    void decToBit(int*);
     void print();
     void copyP(RSIParticle&);
     double getRSI(int);
@@ -265,6 +264,37 @@ void RSIParticle::bitToDec(){
         }
     }
     this -> upper_bound = sum;
+}
+
+void RSIParticle::decToBit(int *RSI_parameter){
+    this -> RSI_number = RSI_parameter[0];
+    this -> lower_bound = RSI_parameter[1];
+    this -> upper_bound = RSI_parameter[2];
+    
+    int shift = 0;
+    int sum = RSI_parameter[0];
+    for(int j = 0; j < RSI_BIT_SIZE; j++){
+        int temp = j + shift;
+        int temp2 = pow(2, RSI_BIT_SIZE - j - 1);
+        this -> data[temp] = sum / temp2;
+        sum = sum % temp2;
+    }
+    sum = RSI_parameter[1];
+    shift += RSI_BIT_SIZE;
+    for(int j = 0; j < BUY_BIT_SIZE; j++){
+        int temp = j + shift;
+        int temp2 = pow(2, BUY_BIT_SIZE - j - 1);
+        this -> data[temp] = sum / temp2;
+        sum = sum % temp2;
+    }
+    sum = RSI_parameter[2];
+    shift += BUY_BIT_SIZE;
+    for(int j = 0; j < SELL_BIT_SIZE; j++){
+        int temp = j + shift;
+        int temp2 = pow(2, SELL_BIT_SIZE - j - 1);
+        this -> data[temp] = sum / temp2;
+        sum = sum % temp2;
+    }
 }
 
 void RSIParticle::print(){
@@ -600,7 +630,7 @@ void outputFile(RSIParticle &p, string file_name) {
     outfile << "Buy point," << p.lower_bound << endl;
     outfile << "Sell point," << p.upper_bound << endl;
     outfile << "Trade times," << p.trade_times << endl;
-    outfile << "Return rate," << p.return_rate << endl;
+    outfile << "Return rate," << p.return_rate  << "%" << endl;
     outfile << endl;
     
     outfile << "Best experiment," << p.exp << endl;
@@ -631,15 +661,22 @@ void recordData(RSIParticle &expBest, ofstream &outfile_data){
     outfile_data << expBest.companyData.date_list[expBest.day_number - 1] << ",";
     outfile_data << expBest.exp << "," << expBest.gen << ",";
     outfile_data << expBest.RSI_number << "," << expBest.lower_bound << "," << expBest.upper_bound << ",";
-    outfile_data << expBest.trade_times << "," << expBest.return_rate << "," << endl;
+    outfile_data << expBest.trade_times << "," << expBest.return_rate << "%" << endl;
 }
 
 void createDir(string file_dir, string company_name, string type, string mode){
+    
     create_directory(file_dir);
     create_directory(file_dir + "/" + company_name);
     create_directory(file_dir + "/" + company_name + "/" + type);
-    create_directory(file_dir + "/" + company_name + "/" + type + "/" + mode);
+    if(mode == "specify"){
+        create_directory(file_dir + "/" + company_name + "/" + type + "/" + mode + "_(" + to_string(RSI_PARAMETER[0]) + ", " + to_string(RSI_PARAMETER[1]) + ", " + to_string(RSI_PARAMETER[2]) + ")");
+    }else{
+        create_directory(file_dir + "/" + company_name + "/" + type + "/" + mode);
+    }
 }
+
+
 
 void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, string& TYPE) {
     string STARTYEAR;
@@ -918,7 +955,7 @@ void releaseData(vector<vector<string>> &price_data_vector, vector<vector<vector
 }
 
 string getOutputFilePath(string company_name, Date current_date, string mode, string file_dir, string type){
-    return file_dir + "/" + company_name + "/" + type + "/" + mode + "/" + mode + "_" + current_date.getYear() + "_" + current_date.getMon() + ".csv";
+    return file_dir + "/" + company_name + "/" + type + "/" + mode + "_(" + to_string(RSI_PARAMETER[0]) + ", " + to_string(RSI_PARAMETER[1]) + ", " + to_string(RSI_PARAMETER[2]) + ")/" + mode + "_" + current_date.getYear() + "_" + current_date.getMon() + ".csv";
 }
 
 void startTrain(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
@@ -1016,14 +1053,12 @@ void startSpe(RSIParticle &result, int* RSI_parameter, string company_name, Comp
     RSIParticle* rsi_particle_list = new RSIParticle[1];
     initRSIParticle(rsi_particle_list, 1, range_day_number, companyData);
     rsi_particle_list[0].init();
-    for(int j = 0; j < BIT_SIZE; j++){
-        rsi_particle_list[0].data[j] = RSI_parameter[j];
-    }
+    rsi_particle_list[0].decToBit(RSI_parameter);
     
-    rsi_particle_list[0].bitToDec();
     startTrade(rsi_particle_list, range_day_number, 1);
     rsi_particle_list[0].print();
     result.copyP(rsi_particle_list[0]);
+    delete[] rsi_particle_list;
 }
 
 int main(int argc, const char * argv[]) {
@@ -1060,6 +1095,9 @@ int main(int argc, const char * argv[]) {
             createDir(FILE_DIR, company_list[c], TYPE, MODE);
             
             temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + ".csv";
+            if(MODE == "specify"){
+                temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + "_(" + to_string(RSI_PARAMETER[0]) + ", " + to_string(RSI_PARAMETER[1]) + ", " + to_string(RSI_PARAMETER[2]) + ").csv";
+            }
             ofstream outfile_data;
             outfile_data.open(temp, ios::out);
             outfile_data << "Date,EXP,GEN,RSI number,Buy point,Sell point,Trade times,Return rate," << endl;
