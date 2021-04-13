@@ -939,9 +939,7 @@ void startExhaustive(RSIParticle &result, string company_name, CompanyData &comp
     expBest.return_rate = -10000;
     RSIParticle* rsi_particle_list = new RSIParticle[1];
     initRSIParticle(rsi_particle_list, 1, range_day_number, companyData);
-    for(int j = 0; j < BIT_SIZE; j++){
-        rsi_particle_list[0].data[j] = 0;
-    }
+    int* temp_data = new int[BIT_SIZE];
     int EXHAUSTIVENUMBER = pow(2, BIT_SIZE);
     for(int n = 0; n < EXHAUSTIVENUMBER; n++){
         if(n % 100000 == 0){
@@ -952,21 +950,26 @@ void startExhaustive(RSIParticle &result, string company_name, CompanyData &comp
         bool add = true;
         for(int j = 0; j < BIT_SIZE; j++){
             if (n == 0){
-                break;
+                temp_data[j] = 0;
             }
-            if(rsi_particle_list[0].data[j] == 0 && add){
+            if(temp_data[j] == 0 && add){
                 add = false;
-                rsi_particle_list[0].data[j] = 1;
+                temp_data[j] = 1;
                 break;
-            }else if(rsi_particle_list[0].data[j] == 1 && add){
-                rsi_particle_list[0].data[j] = 0;
+            }else if(temp_data[j] == 1 && add){
+                temp_data[j] = 0;
             }
         }
+        
+        for(int j = 0; j < BIT_SIZE; j++){
+            rsi_particle_list[0].data[j] = temp_data[j];
+        }
         rsi_particle_list[0].bitToDec();
+        
         startTrade(rsi_particle_list, range_day_number, 1);
         recordExpAnswer(expBest, rsi_particle_list[0]);
     }
-    delete[]   rsi_particle_list;
+    delete[] rsi_particle_list;
     expBest.print();
     result.copyP(expBest);
 }
