@@ -24,7 +24,7 @@ using namespace std;
 using namespace filesystem;
 
 #define EXPNUMBER 50
-#define ITERNUMBER 10000
+#define ITERNUMBER 1000
 #define PARTICLENUMBER 10
 #define FUNDS 10000000
 #define DELTA 0.004
@@ -35,7 +35,7 @@ using namespace filesystem;
 #define RSI_BIT_SIZE 8
 #define BUY_BIT_SIZE 7
 #define SELL_BIT_SIZE 7
-#define MODE "exhaustive" //train, exhaustive, B&H, specify
+#define MODE "test" //train, test, exhaustive, B&H, specify
 
 
 string FILE_DIR = "0413_20100104~20201231_0.004_bit22";
@@ -712,7 +712,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
             train_range = 3;
             slide_number = 3;
             break;
-            
+
         case 2:
             STARTYEAR = "2010";
             STARTMONTH = "1";
@@ -722,7 +722,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
             train_range = 6;
             slide_number = 6;
             break;
-        
+
         case 3:
             STARTYEAR = "2010";
             STARTMONTH = "1";
@@ -732,7 +732,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
             train_range = 12;
             slide_number = 12;
             break;
-            
+
         case 4:
         STARTYEAR = "2010";
         STARTMONTH = "1";
@@ -742,103 +742,103 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
         train_range = 132;
         slide_number = 132;
         break;
-        
+
     }
 //    switch (SLIDETYPE) {
 //    case 0:
-//        STARTYEAR = "2009";
-//        STARTMONTH = "12";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "11";
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "12";
 //        TYPE = "M2M";
 //        train_range = 1;
 //        slide_number = 1;
 //        break;
 //    case 1:
-//        STARTYEAR = "2009";
-//        STARTMONTH = "10";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "9";
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "10";
 //        TYPE = "Q2M";
 //        train_range = 3;
 //        slide_number = 1;
 //        break;
 //    case 2:
-//        STARTYEAR = "2009";
-//        STARTMONTH = "10";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "7";
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "12";
 //        TYPE = "Q2Q";
 //        train_range = 3;
 //        slide_number = 3;
 //        break;
 //    case 3:
-//        STARTYEAR = "2009";
-//        STARTMONTH = "7";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "6";
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "7";
 //        TYPE = "H2M";
 //        train_range = 6;
 //        slide_number = 1;
 //        break;
 //    case 4:
-//        STARTYEAR = "2009";
-//        STARTMONTH = "7";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "4";
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "7";
 //        TYPE = "H2Q";
 //        train_range = 6;
 //        slide_number = 3;
 //        break;
 //    case 5:
-//        STARTYEAR = "2009";
-//        STARTMONTH = "7";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "1";
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "12";
 //        TYPE = "H2H";
 //        train_range = 6;
 //        slide_number = 6;
 //        break;
 //    case 6:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
-//        ENDMONTH = "12";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "1";
 //        TYPE = "Y2M";
 //        train_range = 12;
 //        slide_number = 1;
 //        break;
 //    case 7:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
-//        ENDMONTH = "10";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "1";
 //        TYPE = "Y2Q";
 //        train_range = 12;
 //        slide_number = 3;
 //        break;
 //    case 8:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
-//        ENDMONTH = "7";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "1";
 //        TYPE = "Y2H";
 //        train_range = 12;
 //        slide_number = 6;
 //        break;
 //    case 9:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
-//        ENDMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "12";
 //        TYPE = "Y2Y";
 //        train_range = 12;
 //        slide_number = 12;
 //        break;
 //    case 10:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
+//        ENDYEAR = "2019";
 //        ENDMONTH = "12";
 //        TYPE = "M#";
 //        if(mode == "train"){
@@ -849,10 +849,10 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
 //        slide_number = 1;
 //        break;
 //    case 11:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
-//        ENDMONTH = "10";
+//        ENDYEAR = "2019";
+//        ENDMONTH = "12";
 //        TYPE = "Q#";
 //        if(mode == "train"){
 //            train_range = 3;
@@ -862,10 +862,10 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
 //        slide_number = 3;
 //        break;
 //    case 12:
-//        STARTYEAR = "2009";
+//        STARTYEAR = "2010";
 //        STARTMONTH = "1";
-//        ENDYEAR = "2018";
-//        ENDMONTH = "7";
+//        ENDYEAR = "2019";
+//        ENDMONTH = "12";
 //        TYPE = "H#";
 //        if(mode == "train"){
 //            train_range = 6;
@@ -890,7 +890,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
     
     if(mode == "test"){
         current_date.slide(train_range);
-        finish_date.slide(train_range);
+        //finish_date.slide(train_range);
     }
 }
 
@@ -900,10 +900,10 @@ void setWindow(string mode, string &start_date, string &end_date, int &start_ind
     for(int j = 0; j < day_number; j++){
         string temp1 = current_date.getYear() + "-" + current_date.getMon();
         string temp2;
-        if(mode == "train"){
-            temp2 = current_date.getRangeEnd(current_date.train_range - 1).getYear() + "-" + current_date.getRangeEnd(current_date.train_range - 1).getMon();
-        }else{
+        if(mode == "test"){
             temp2 = current_date.getRangeEnd(current_date.slide_number - 1).getYear() + "-" + current_date.getRangeEnd(current_date.slide_number - 1).getMon();
+        }else{
+            temp2 = current_date.getRangeEnd(current_date.train_range - 1).getYear() + "-" + current_date.getRangeEnd(current_date.train_range - 1).getMon();
         }
         
         if(!sw && temp1 == data_copy[j]){
@@ -1006,6 +1006,41 @@ void startTrain(RSIParticle &result, string company_name, CompanyData &companyDa
     result.copyP(expBest);
 }
 
+void startTest(RSIParticle &result, Date current_date, string company_name, string type, CompanyData &companyData, int range_day_number){
+    Date temp_date = current_date.getRangeEnd(-1 * current_date.train_range);
+    string temp = FILE_DIR + "/" + company_name + "/" + type + "/train/" + "train_" + temp_date.getYear() + "_" + temp_date.getMon() + ".csv";
+    vector<vector<string>> train_data_vector;
+    int RSI_parameter[3] = {};
+    readData(temp, train_data_vector);
+    for(int j = 0; j < train_data_vector.size(); j++){
+        if(train_data_vector[j].size() != 0){
+            temp = train_data_vector[j][0];
+        }
+        if(temp == "RSI number"){
+            RSI_parameter[0] = atof(train_data_vector[j][1].c_str());
+        }else if(temp == "Buy point"){
+            RSI_parameter[1] = atof(train_data_vector[j][1].c_str());
+        }else if(temp == "Sell point"){
+            RSI_parameter[2] = atof(train_data_vector[j][1].c_str());
+        }
+    }
+    
+    RSIParticle* rsi_particle_list = new RSIParticle[1];
+    initRSIParticle(rsi_particle_list, 1, range_day_number, companyData);
+    rsi_particle_list[0].init();
+    rsi_particle_list[0].decToBit(RSI_parameter);
+    if(rsi_particle_list[0].RSI_number != 0){
+        startTrade(rsi_particle_list, range_day_number, 1);
+    }
+    rsi_particle_list[0].print();
+    result.copyP(rsi_particle_list[0]);
+    delete[] rsi_particle_list;
+    for(int j = 0; j < train_data_vector.size(); j++){
+        train_data_vector[j].clear();
+    }
+    train_data_vector.clear();
+}
+
 void startExhaustive(RSIParticle &result, string company_name, CompanyData &companyData, int range_day_number){
     
     RSIParticle expBest(range_day_number, BIT_SIZE, FUNDS, companyData);
@@ -1094,7 +1129,7 @@ int main(int argc, const char * argv[]) {
         string *data_copy = new string[day_number];
         copyData(data_copy, price_data, day_number);
         
-        for(int s = 4; s >= 0; s--){
+        for(int s = 3; s >= 0; s--){
             
             srand(343);
             double START, END;
@@ -1105,7 +1140,7 @@ int main(int argc, const char * argv[]) {
             string TYPE;
             preSet(MODE, current_date, finish_date, s, TYPE);
             createDir(FILE_DIR, company_list[c], TYPE, MODE);
-            
+            cout << TYPE << endl;
             temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + ".csv";
             if(MODE == "specify"){
                 temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + "_(" + to_string(RSI_PARAMETER[0]) + ", " + to_string(RSI_PARAMETER[1]) + ", " + to_string(RSI_PARAMETER[2]) + ").csv";
@@ -1132,6 +1167,8 @@ int main(int argc, const char * argv[]) {
                 
                 if(MODE == "train"){
                     startTrain(result, company_list[c], companyData, range_day_number);
+                }else if(MODE == "test"){
+                    startTest(result, current_date, company_list[c], TYPE, companyData, range_day_number);
                 }else if(MODE == "exhaustive"){
                     startExhaustive(result, company_list[c], companyData, range_day_number);
                 }else if(MODE == "B&H"){
