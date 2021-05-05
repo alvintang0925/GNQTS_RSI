@@ -27,7 +27,7 @@ using namespace filesystem;
 #define ITERNUMBER 1000
 #define PARTICLENUMBER 10
 #define FUNDS 10000000
-#define DELTA 0.004
+#define DELTA 0.003
 #define QTSTYPE 2 //QTS 0, GQTS 1, GNQTS 2
 //#define TRENDLINETYPE 0 //linear 0, quadratic 1
 #define STARTDATE "2010-01-04"
@@ -35,10 +35,10 @@ using namespace filesystem;
 #define RSI_BIT_SIZE 8
 #define BUY_BIT_SIZE 7
 #define SELL_BIT_SIZE 7
-#define MODE "test" //train, test, exhaustive, B&H, specify
+#define MODE "train" //train, test, exhaustive, B&H, specify
 
 
-string FILE_DIR = "0413_20100104~20201231_0.004_bit22";
+string FILE_DIR = "0505_20100104~20201231_0.004_bit22";
 string COMPANY_PRICE_DIR = "select_stock_price";
 string RSI_DIR = "select_RSI_list";
 int BIT_SIZE = RSI_BIT_SIZE + BUY_BIT_SIZE + SELL_BIT_SIZE;
@@ -663,12 +663,13 @@ void recordCPUTime(double START, double END, string file_name){
     outfile_time.close();
 }
 
-void recordData(RSIParticle &expBest, ofstream &outfile_data){
+void recordData(RSIParticle &expBest, ofstream &outfile_data, double &return_rate_sum){
     outfile_data << expBest.companyData.date_list[0] << " ~ ";
     outfile_data << expBest.companyData.date_list[expBest.day_number - 1] << ",";
     outfile_data << expBest.exp << "," << expBest.gen << ",";
     outfile_data << expBest.RSI_number << "," << expBest.lower_bound << "," << expBest.upper_bound << ",";
     outfile_data << expBest.trade_times << "," << expBest.return_rate << "%" << endl;
+    return_rate_sum += expBest.return_rate;
 }
 
 void createDir(string file_dir, string company_name, string type, string mode){
@@ -692,48 +693,190 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
     string ENDMONTH;
     int slide_number;
     int train_range;
+//    switch (SLIDETYPE) {
+//        case 0:
+//            STARTYEAR = "2010";
+//            STARTMONTH = "1";
+//            ENDYEAR = "2020";
+//            ENDMONTH = "12";
+//            TYPE = "M2M";
+//            train_range = 1;
+//            slide_number = 1;
+//            break;
+//
+//        case 1:
+//            STARTYEAR = "2010";
+//            STARTMONTH = "1";
+//            ENDYEAR = "2020";
+//            ENDMONTH = "12";
+//            TYPE = "Q2Q";
+//            train_range = 3;
+//            slide_number = 3;
+//            break;
+//
+//        case 2:
+//            STARTYEAR = "2010";
+//            STARTMONTH = "1";
+//            ENDYEAR = "2020";
+//            ENDMONTH = "12";
+//            TYPE = "H2H";
+//            train_range = 6;
+//            slide_number = 6;
+//            break;
+//
+//        case 3:
+//            STARTYEAR = "2010";
+//            STARTMONTH = "1";
+//            ENDYEAR = "2020";
+//            ENDMONTH = "12";
+//            TYPE = "Y2Y";
+//            train_range = 12;
+//            slide_number = 12;
+//            break;
+//
+//        case 4:
+//        STARTYEAR = "2010";
+//        STARTMONTH = "1";
+//        ENDYEAR = "2020";
+//        ENDMONTH = "12";
+//        TYPE = "A2A";
+//        train_range = 132;
+//        slide_number = 132;
+//        break;
+//
+//    }
     switch (SLIDETYPE) {
-        case 0:
-            STARTYEAR = "2010";
-            STARTMONTH = "1";
-            ENDYEAR = "2020";
-            ENDMONTH = "12";
-            TYPE = "M2M";
-            train_range = 1;
-            slide_number = 1;
-            break;
-
-        case 1:
-            STARTYEAR = "2010";
-            STARTMONTH = "1";
-            ENDYEAR = "2020";
-            ENDMONTH = "12";
-            TYPE = "Q2Q";
-            train_range = 3;
-            slide_number = 3;
-            break;
-
-        case 2:
-            STARTYEAR = "2010";
-            STARTMONTH = "1";
-            ENDYEAR = "2020";
-            ENDMONTH = "12";
-            TYPE = "H2H";
-            train_range = 6;
-            slide_number = 6;
-            break;
-
-        case 3:
-            STARTYEAR = "2010";
-            STARTMONTH = "1";
-            ENDYEAR = "2020";
-            ENDMONTH = "12";
-            TYPE = "Y2Y";
+    case 0:
+        STARTYEAR = "2010";
+        STARTMONTH = "12";
+        ENDYEAR = "2020";
+        ENDMONTH = "11";
+        TYPE = "M2M";
+        train_range = 1;
+        slide_number = 1;
+        break;
+    case 1:
+        STARTYEAR = "2010";
+        STARTMONTH = "10";
+        ENDYEAR = "2020";
+        ENDMONTH = "9";
+        TYPE = "Q2M";
+        train_range = 3;
+        slide_number = 1;
+        break;
+    case 2:
+        STARTYEAR = "2010";
+        STARTMONTH = "10";
+        ENDYEAR = "2020";
+        ENDMONTH = "7";
+        TYPE = "Q2Q";
+        train_range = 3;
+        slide_number = 3;
+        break;
+    case 3:
+        STARTYEAR = "2010";
+        STARTMONTH = "7";
+        ENDYEAR = "2020";
+        ENDMONTH = "6";
+        TYPE = "H2M";
+        train_range = 6;
+        slide_number = 1;
+        break;
+    case 4:
+        STARTYEAR = "2010";
+        STARTMONTH = "7";
+        ENDYEAR = "2020";
+        ENDMONTH = "4";
+        TYPE = "H2Q";
+        train_range = 6;
+        slide_number = 3;
+        break;
+    case 5:
+        STARTYEAR = "2010";
+        STARTMONTH = "7";
+        ENDYEAR = "2020";
+        ENDMONTH = "1";
+        TYPE = "H2H";
+        train_range = 6;
+        slide_number = 6;
+        break;
+    case 6:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2019";
+        ENDMONTH = "12";
+        TYPE = "Y2M";
+        train_range = 12;
+        slide_number = 1;
+        break;
+    case 7:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2019";
+        ENDMONTH = "10";
+        TYPE = "Y2Q";
+        train_range = 12;
+        slide_number = 3;
+        break;
+    case 8:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2020";
+        ENDMONTH = "7";
+        TYPE = "Y2H";
+        train_range = 12;
+        slide_number = 6;
+        break;
+    case 9:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2019";
+        ENDMONTH = "1";
+        TYPE = "Y2Y";
+        train_range = 12;
+        slide_number = 12;
+        break;
+    case 10:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2019";
+        ENDMONTH = "12";
+        TYPE = "M#";
+        if(mode == "test"){
             train_range = 12;
-            slide_number = 12;
-            break;
-
-        case 4:
+        }else{
+            train_range = 1;
+        }
+        slide_number = 1;
+        break;
+    case 11:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2019";
+        ENDMONTH = "10";
+        TYPE = "Q#";
+        if(mode == "test"){
+            train_range = 12;
+        }else{
+            train_range = 3;
+        }
+        slide_number = 3;
+        break;
+    case 12:
+        STARTYEAR = "2010";
+        STARTMONTH = "1";
+        ENDYEAR = "2019";
+        ENDMONTH = "7";
+        TYPE = "H#";
+        if(mode == "test"){
+            train_range = 12;
+        }else{
+            train_range = 6;
+        }
+        slide_number = 6;
+        break;
+            
+     case 13:
         STARTYEAR = "2010";
         STARTMONTH = "1";
         ENDYEAR = "2020";
@@ -742,139 +885,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
         train_range = 132;
         slide_number = 132;
         break;
-
     }
-//    switch (SLIDETYPE) {
-//    case 0:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "12";
-//        TYPE = "M2M";
-//        train_range = 1;
-//        slide_number = 1;
-//        break;
-//    case 1:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "10";
-//        TYPE = "Q2M";
-//        train_range = 3;
-//        slide_number = 1;
-//        break;
-//    case 2:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "12";
-//        TYPE = "Q2Q";
-//        train_range = 3;
-//        slide_number = 3;
-//        break;
-//    case 3:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "7";
-//        TYPE = "H2M";
-//        train_range = 6;
-//        slide_number = 1;
-//        break;
-//    case 4:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "7";
-//        TYPE = "H2Q";
-//        train_range = 6;
-//        slide_number = 3;
-//        break;
-//    case 5:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "12";
-//        TYPE = "H2H";
-//        train_range = 6;
-//        slide_number = 6;
-//        break;
-//    case 6:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "1";
-//        TYPE = "Y2M";
-//        train_range = 12;
-//        slide_number = 1;
-//        break;
-//    case 7:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "1";
-//        TYPE = "Y2Q";
-//        train_range = 12;
-//        slide_number = 3;
-//        break;
-//    case 8:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "1";
-//        TYPE = "Y2H";
-//        train_range = 12;
-//        slide_number = 6;
-//        break;
-//    case 9:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2020";
-//        ENDMONTH = "12";
-//        TYPE = "Y2Y";
-//        train_range = 12;
-//        slide_number = 12;
-//        break;
-//    case 10:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "12";
-//        TYPE = "M#";
-//        if(mode == "train"){
-//            train_range = 1;
-//        }else{
-//            train_range = 12;
-//        }
-//        slide_number = 1;
-//        break;
-//    case 11:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "12";
-//        TYPE = "Q#";
-//        if(mode == "train"){
-//            train_range = 3;
-//        }else{
-//            train_range = 12;
-//        }
-//        slide_number = 3;
-//        break;
-//    case 12:
-//        STARTYEAR = "2010";
-//        STARTMONTH = "1";
-//        ENDYEAR = "2019";
-//        ENDMONTH = "12";
-//        TYPE = "H#";
-//        if(mode == "train"){
-//            train_range = 6;
-//        }else{
-//            train_range = 12;
-//        }
-//        slide_number = 6;
-//        break;
-//    }
 
     current_date.date.tm_year = atoi(STARTYEAR.c_str()) - 1900;
     current_date.date.tm_mon = atoi(STARTMONTH.c_str()) - 1;
@@ -1129,7 +1140,7 @@ int main(int argc, const char * argv[]) {
         string *data_copy = new string[day_number];
         copyData(data_copy, price_data, day_number);
         
-        for(int s = 3; s >= 0; s--){
+        for(int s = 13; s >= 0; s--){
             
             srand(343);
             double START, END;
@@ -1139,6 +1150,9 @@ int main(int argc, const char * argv[]) {
             Date finish_date;
             string TYPE;
             preSet(MODE, current_date, finish_date, s, TYPE);
+            if (MODE == "test" && TYPE == "A2A") {
+                continue;
+            }
             createDir(FILE_DIR, company_list[c], TYPE, MODE);
             cout << TYPE << endl;
             temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "total_data_" + MODE + ".csv";
@@ -1148,6 +1162,8 @@ int main(int argc, const char * argv[]) {
             ofstream outfile_data;
             outfile_data.open(temp, ios::out);
             outfile_data << "Date,EXP,GEN,RSI number,Buy point,Sell point,Trade times,Return rate," << endl;
+            double return_rate_sum = 0;
+            int data_counter = 0;
             
             do{
                 int range_day_number;
@@ -1179,13 +1195,23 @@ int main(int argc, const char * argv[]) {
                 
                 genTradeRecord(result, range_day_number);
                 outputFile(result, getOutputFilePath(company_list[c], current_date, MODE, FILE_DIR, TYPE));
-                recordData(result, outfile_data);
+                recordData(result, outfile_data, return_rate_sum);
+                data_counter++;
                 current_date.slide();
             }while(finish_date >= current_date);
+            
+            double range;
+            if(MODE == "test"){
+                range = current_date.slide_number;
+            }else{
+                range = current_date.train_range;
+            }
+            outfile_data << "Annual net profit," << (pow(1 + (return_rate_sum / data_counter), 12 / range) - 1) << "%" << endl;
+            outfile_data.close();
+            
             END = clock();
             temp = FILE_DIR + "/" + company_list[c] + "/" + TYPE + "/" + "time_" + MODE + ".txt";
             recordCPUTime(START, END, temp);
-            outfile_data.close();
         }
         releaseData(price_data_vector, RSI_data_vector, price_data, RSI_data, data_copy);
     }
