@@ -35,7 +35,7 @@ using namespace filesystem;
 #define RSI_BIT_SIZE 8
 #define BUY_BIT_SIZE 7
 #define SELL_BIT_SIZE 7
-#define MODE "train" //train, test, exhaustive, B&H, specify
+#define MODE "test" //train, test, exhaustive, B&H, specify
 
 
 string FILE_DIR = "0505_20100104~20201231_0.004_bit22";
@@ -1206,7 +1206,7 @@ int main(int argc, const char * argv[]) {
             }else{
                 range = current_date.train_range;
             }
-            outfile_data << "Annual net profit," << (pow(1 + (return_rate_sum / data_counter), 12 / range) - 1) << "%" << endl;
+            outfile_data << "Annual net profit," << (pow(1 + (return_rate_sum / 100 / data_counter), 12 / range) - 1) * 100 << "%" << endl;
             outfile_data.close();
             
             END = clock();
