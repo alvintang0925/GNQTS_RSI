@@ -157,6 +157,9 @@ RSIParticle::RSIParticle(int day_number, int bit_size, double funds, CompanyData
         delete[] this -> remain_money_list;
     }
     this -> data = new int[bit_size];
+    for(int j = 0; j < this -> bit_size; j++){
+        data[j] = 0;
+    }
     this -> trade_list = new int[day_number];
     this -> investment_list = new int[day_number];
     this -> total_money = new double[day_number];
@@ -199,6 +202,9 @@ void RSIParticle::init(){
         delete[] this -> remain_money_list;
     }
     this -> data = new int[this -> bit_size];
+    for(int j = 0; j < this -> bit_size; j++){
+        data[j] = 0;
+    }
     this -> trade_list = new int[this -> day_number];
     this -> investment_list = new int[this -> day_number];
     this -> total_money = new double[this -> day_number];
@@ -216,6 +222,7 @@ void RSIParticle::init(int day_number, int bit_size, double funds, CompanyData &
     this -> return_rate = 0;
     this -> upper_bound = 0;
     this -> lower_bound = 0;
+    this -> return_rate = 0;
     this -> remain_money = funds;
     this -> day_number = day_number;
     this -> funds = funds;
@@ -230,6 +237,9 @@ void RSIParticle::init(int day_number, int bit_size, double funds, CompanyData &
         delete[] this -> remain_money_list;
     }
     this -> data = new int[bit_size];
+    for(int j = 0; j < this -> bit_size; j++){
+        data[j] = 0;
+    }
     this -> trade_list = new int[day_number];
     this -> investment_list = new int[day_number];
     this -> total_money = new double[day_number];
@@ -821,7 +831,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
     case 8:
         STARTYEAR = "2010";
         STARTMONTH = "1";
-        ENDYEAR = "2020";
+        ENDYEAR = "2019";
         ENDMONTH = "7";
         TYPE = "Y2H";
         train_range = 12;
@@ -901,7 +911,7 @@ void preSet(string mode, Date& current_date, Date& finish_date, int SLIDETYPE, s
     
     if(mode == "test"){
         current_date.slide(train_range);
-        //finish_date.slide(train_range);
+        finish_date.slide(train_range);
     }
 }
 
@@ -1008,7 +1018,6 @@ void startTrain(RSIParticle &result, string company_name, CompanyData &companyDa
             adjBeta(gBest, pWorst, beta_);
         }
         recordExpAnswer(expBest, gBest);
-        
     }
     
     expBest.print();
@@ -1127,7 +1136,6 @@ int main(int argc, const char * argv[]) {
         string*** RSI_data;
         vector<vector<string>> price_data_vector;
         vector<vector<vector<string>>> RSI_data_vector;
-        
         string temp = COMPANY_PRICE_DIR + "/" + company_list[c] + ".csv";
         readData(temp, price_data_vector);
         temp = RSI_DIR + "/" + company_list[c] + "/";
@@ -1140,7 +1148,7 @@ int main(int argc, const char * argv[]) {
         string *data_copy = new string[day_number];
         copyData(data_copy, price_data, day_number);
         
-        for(int s = 13; s >= 0; s--){
+        for(int s = 12; s >= 0; s--){
             
             srand(343);
             double START, END;
